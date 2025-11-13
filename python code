@@ -1,0 +1,67 @@
+import pymysql
+import matplotlib.pyplot as plt
+
+# --- Step 1: User Input ---
+name = input("Enter your name: ")
+age = int(input("Enter your age: "))
+weight = float(input("Enter your weight (kg): "))
+height = float(input("Enter your height (m): "))
+drink = input("Do you drink? (yes/no): ").lower()
+smoke = input("Do you smoke? (yes/no): ").lower()
+
+# --- Step 2: BMI Calculation ---
+bmi = weight / (height ** 2)
+if bmi < 18.5:
+    status = "Underweight"
+elif 18.5 <= bmi < 24.9:
+    status = "Normal"
+elif 25 <= bmi < 29.9:
+    status = "Overweight"
+else:
+    status = "Obese"
+
+print(f"\n{name}, your BMI is {bmi:.2f} and you are {status}.\n")
+
+# --- Step 3: Health Risk Data (Static Example) ---
+death_causes = ['Smoking', 'Drinking', 'Obesity', 'No Bad Habits']
+death_percent = [35, 25, 30, 10]
+
+print("📊 Global Death Statistics (Previous Year):")
+for cause, percent in zip(death_causes, death_percent):
+    print(f"{cause}: {percent}% people died due to this reason")
+
+# --- Step 4: Visualization ---
+# Bar Graph
+plt.figure(figsize=(7,5))
+plt.bar(death_causes, death_percent, color=['red','orange','purple','green'])
+plt.title("Death % by Cause (Previous Year)")
+plt.ylabel("Percentage of Deaths")
+plt.xlabel("Causes")
+plt.grid(axis='y', linestyle='--', alpha=0.7)
+plt.show()
+
+# Pie Chart
+plt.figure(figsize=(6,6))
+plt.pie(death_percent, labels=death_causes, autopct='%1.1f%%', startangle=90)
+plt.title("Death Distribution by Lifestyle (Global Data)")
+plt.show()
+
+# --- Step 5: Store Data in AWS RDS ---
+try:
+    conn = pymysql.connect(
+        host='your-rds-endpoint.amazonaws.com',  # Replace with your AWS RDS endpoint
+        user='admin',                            # Replace with your RDS username
+        password='yourpassword',                 # Replace with your RDS password
+        database='healthdb'
+    )
+    cursor = conn.cursor()
+    sql = """INSERT INTO users (name, age, weight, height, bmi, status, drink, smoke)
+             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"""
+    cursor.execute(sql, (name, age, weight, height, bmi, status, drink, smoke))
+    conn.commit()
+    print("\n✅ User data saved successfully to AWS RDS database!")
+except Exception as e:
+    print("❌ Database Error:", e)
+finally:
+    if 'conn' in locals():
+        conn.close()
